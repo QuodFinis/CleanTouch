@@ -7,3 +7,9 @@ node_modules
 # Generated files
 .psci
 output
+
+/venv
+.idea
+.gitignore
+/app/__pycache__
+/__pycache__
