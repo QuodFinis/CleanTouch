@@ -4,7 +4,7 @@ from app.forms import LoginForm, RegistrationForm
 from flask_login import current_user, login_user, logout_user, login_required
 import sqlalchemy as sa
 from app import db
-from app.models import User
+from app.models import Customer
 from urllib.parse import urlsplit
 
 @app.route('/')
@@ -21,7 +21,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = db.session.scalar(
-            sa.select(User).where(User.username == form.username.data))
+            sa.select(Customer).where(Customer.username == form.username.data))
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
             return redirect(url_for('login'))
@@ -43,10 +43,17 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data, account_type=form.account_type.data)
+        user = Customer(username=form.username.data, email=form.email.data, account_type=form.account_type.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash(f'Congratulations, you are now a registered {user.account_type}!')
+        flash(f'Congratulations, you are now a registered!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
+
+@app.route('/user/<username>')
+@login_required
+def user(username):
+    user = db.first_or_404(sa.select(Customer).where(Customer.username == username))
+    # TODO: add section to show users vehicles, recent washes info, and settings as bar on left
+    return render_template('user.html', user=user)
