@@ -1,9 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField, DecimalField
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo
 import sqlalchemy as sa
 from app import db
-from app.models import Customer
+from app.models import Customer, Business
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -33,3 +33,17 @@ class RegistrationForm(FlaskForm):
             Customer.email == email.data))
         if user is not None:
             raise ValidationError('Please use a different email address.')
+
+
+class VehicleForm(FlaskForm):
+    make = StringField('Make', validators=[DataRequired()])
+    model = StringField('Model', validators=[DataRequired()])
+    year = StringField('Year', validators=[DataRequired()])
+    submit = SubmitField('Add Vehicle')
+
+
+class ServiceForm(FlaskForm):
+    name = StringField('Service Name', validators=[DataRequired()])
+    description = StringField('Description', validators=[DataRequired()])
+    price = DecimalField('Price', places=2, validators=[DataRequired()])
+    submit = SubmitField('Add Service')
