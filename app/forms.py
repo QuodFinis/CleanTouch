@@ -18,7 +18,7 @@ class RegistrationForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
-    account_type = SelectField('Account Type', choices=[('user', 'User'), ('business', 'Business')],
+    account_type = SelectField('Account Type', choices=[('customer', 'Customer'), ('business', 'Business')],
                                validators=[DataRequired()])
     submit = SubmitField('Register')
 

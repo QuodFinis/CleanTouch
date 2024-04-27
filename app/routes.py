@@ -67,32 +67,24 @@ def register():
 @app.route('/user/<username>', methods=['GET', 'POST'])
 @login_required
 def user(username):
-    # Attempt to load a Customer first
     user_customer = Customer.query.filter_by(username=username).first()
-
-    # If a Customer user is found
     if user_customer:
         form = VehicleForm()
         if form.validate_on_submit():
-            new_vehicle = Vehicle(make=form.make.data, model=form.model.data, year=form.year.data,
-                                  customer_id=user_customer.id)
+            new_vehicle = Vehicle(
+                make=form.make.data, model=form.model.data, year=form.year.data, customer_id=user_customer.id
+            )
             db.session.add(new_vehicle)
             db.session.commit()
             flash('Your vehicle has been added.')
             return redirect(url_for('user', username=username))
-        return render_template('customer.html', user=user_customer, vehicles=user_customer.vehicles or [], form=form)
+        # Ensure vehicles is always a list
+        vehicles = [user_customer.vehicles] if user_customer.vehicles else []
+        print(vehicles)
+        return render_template('customer.html', user=user_customer, vehicles=vehicles, form=form)
+    else:
+        return "User not found", 404  # Handling if no customer is found
 
-    # If no Customer is found, attempt to load a Business
-    user_business = Business.query.filter_by(username=username).first_or_404()
-    form = ServiceForm()
-    if form.validate_on_submit():
-        new_service = Service(name=form.name.data, description=form.description.data, price=form.price.data,
-                              business_id=user_business.id)
-        db.session.add(new_service)
-        db.session.commit()
-        flash('Service added successfully.')
-        return redirect(url_for('user', username=username))
-    return render_template('business.html', user=user_business, services=user_business.services, form=form)
 
 
 @app.route('/user/<username>/add_vehicle', methods=['POST'])
