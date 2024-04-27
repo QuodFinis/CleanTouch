@@ -9,13 +9,13 @@ from hashlib import md5
 
 @login.user_loader
 def load_user(user_id):
-    # First, try to load the user as a Customer
-    user = Customer.query.get(int(user_id))
-    if user is not None:
-        return user
-    # If not a Customer, try to load as a Business
-    user = Business.query.get(int(user_id))
-    return user
+    user_type = user_id[0]
+    user_id = int(user_id[1:])
+
+    if user_type == 'c':
+        return Customer.query.get(user_id)
+    elif user_type == 'b':
+        return Business.query.get(user_id)
 
 class Customer(UserMixin, db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
@@ -35,6 +35,9 @@ class Customer(UserMixin, db.Model):
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
 
+    def get_id(self):
+        return 'c' + str(self.id)
+
 class Business(UserMixin, db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     username: so.Mapped[str] = so.mapped_column(sa.String(64), index=True, unique=True)
@@ -51,6 +54,9 @@ class Business(UserMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
+
+    def get_id(self):
+        return 'b' + str(self.id)
 
 
 class Vehicle(db.Model):

@@ -7,6 +7,19 @@ from app import db
 from app.models import Customer, Business, Vehicle, Schedule, Service, Booking
 from urllib.parse import urlsplit
 
+
+from functools import wraps
+def user_matches(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        username = kwargs.get('username')
+        if current_user.username != username:
+            flash('You do not have permission to access this page.')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -66,6 +79,7 @@ def register():
 
 @app.route('/user/<username>', methods=['GET', 'POST'])
 @login_required
+@user_matches
 def user(username):
     user_customer = Customer.query.filter_by(username=username).first()
     if user_customer:
@@ -80,8 +94,22 @@ def user(username):
             return redirect(url_for('user', username=username))
         # Ensure vehicles is always a list
         vehicles = [user_customer.vehicles] if user_customer.vehicles else []
-        print(vehicles)
-        return render_template('customer.html', user=user_customer, vehicles=vehicles, form=form)
+        return render_template('customer_profile.html', user=user_customer, vehicles=vehicles, form=form)
+
+    elif user_business := Business.query.filter_by(username=username).first():
+        if user_business:
+            form = ServiceForm()
+            if form.validate_on_submit():
+                new_service = Service(
+                    name=form.name.data, description=form.description.data, price=form.price.data, business=user_business
+                )
+                db.session.add(new_service)
+                db.session.commit()
+                flash('Your service has been added.')
+                return redirect(url_for('user', username=username))
+            services = [user_business.services] if user_business.services else []
+            return render_template('business_profile.html', user=user_business, services=services, form=form)
+
     else:
         return "User not found", 404  # Handling if no customer is found
 
@@ -89,6 +117,7 @@ def user(username):
 
 @app.route('/user/<username>/add_vehicle', methods=['POST'])
 @login_required
+@user_matches
 def add_vehicle(username):
     # Ensure you're retrieving the correct form and user
     form = VehicleForm()
@@ -106,6 +135,7 @@ def add_vehicle(username):
 
 @app.route('/user/<username>/add_service', methods=['POST'])
 @login_required
+@user_matches
 def add_service(username):
     form = ServiceForm()
     if form.validate_on_submit():
@@ -117,3 +147,12 @@ def add_service(username):
     else:
         flash('Error adding service.')
     return redirect(url_for('user', username=username))
+
+
+@app.route('/debug/users')
+def debug_users():
+    customers = Customer.query.all()
+    businesses = Business.query.all()
+    customer_info = [(cust.id, cust.username) for cust in customers]
+    business_info = [(biz.id, biz.username) for biz in businesses]
+    return {'customers': customer_info, 'businesses': business_info}
